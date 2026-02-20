@@ -19,43 +19,73 @@ const sensorModels = [
 
 function AddDropdown({ groups, onAdd, placeholder, icon: Icon, onOpenChange }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [search, setSearch] = useState('')
 
   const toggle = (val) => {
     setIsOpen(val)
+    if (!val) setSearch('')
     onOpenChange?.(val)
   }
+
+  const q = search.toLowerCase()
+  const filtered = groups.map(g => ({
+    ...g,
+    items: g.items.filter(item => item.toLowerCase().includes(q)),
+  })).filter(g => g.items.length > 0)
 
   return (
     <div className="relative">
       <button
         onClick={() => toggle(!isOpen)}
-        className="w-full flex items-center gap-3 bg-white/5 border border-dashed border-white/15 rounded-xl px-4 py-3 text-sm text-left outline-none hover:border-blue-500/40 hover:bg-blue-500/5 transition-all cursor-pointer"
+        className={`w-full flex items-center gap-3 border border-dashed rounded-xl px-4 py-3 text-sm text-left outline-none transition-all cursor-pointer ${
+          isOpen
+            ? 'bg-blue-500/5 border-blue-500/30'
+            : 'bg-white/[0.03] border-white/10 hover:border-blue-500/30 hover:bg-white/[0.05]'
+        }`}
       >
         <Plus size={16} className="text-blue-400" />
         <span className="text-white/30">{placeholder}</span>
-        <ChevronDown size={16} className={`ml-auto text-white/30 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={16} className={`ml-auto text-white/20 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => toggle(false)} />
-          <div className="absolute z-50 mt-2 w-full bg-gray-900 border border-white/10 rounded-xl shadow-2xl shadow-black/60 max-h-72 overflow-y-auto">
-            {groups.map((group) => (
-              <div key={group.label}>
-                <div className="px-4 py-2 text-[0.65rem] font-semibold text-white/30 uppercase tracking-wider sticky top-0 bg-gray-900 border-b border-white/5">
-                  {group.label}
+          <div className="absolute z-50 mt-2 w-full bg-gray-950/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
+            {/* Search */}
+            <div className="p-3 border-b border-white/5">
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search..."
+                autoFocus
+                className="w-full bg-white/5 border border-white/8 rounded-lg px-3 py-1.5 text-xs text-white/70 placeholder:text-white/20 outline-none focus:border-white/20 transition-colors"
+              />
+            </div>
+
+            {/* List */}
+            <div className="max-h-64 overflow-y-auto">
+              {filtered.length === 0 && (
+                <div className="px-4 py-6 text-center text-xs text-white/20">No results</div>
+              )}
+              {filtered.map((group) => (
+                <div key={group.label}>
+                  <div className="px-4 py-2 text-[0.6rem] font-semibold text-white/25 uppercase tracking-wider sticky top-0 bg-gray-950/95 backdrop-blur-sm border-b border-white/[0.03]">
+                    {group.label}
+                  </div>
+                  {group.items.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => { onAdd(item); toggle(false) }}
+                      className="w-full text-left px-4 py-2.5 text-xs text-white/50 hover:bg-white/[0.05] hover:text-white/80 transition-all cursor-pointer"
+                    >
+                      {item}
+                    </button>
+                  ))}
                 </div>
-                {group.items.map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => { onAdd(item); toggle(false) }}
-                    className="w-full text-left px-4 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white/90 transition-colors cursor-pointer"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </>
       )}
