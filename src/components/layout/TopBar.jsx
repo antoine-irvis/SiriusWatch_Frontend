@@ -1,10 +1,10 @@
 import { useLocation } from 'react-router-dom'
 import { Menu, Bell, User } from 'lucide-react'
-import navItems from '../../data/navItems'
+import { allNavItems } from '../../data/navItems'
 
 export default function TopBar({ onMenuClick }) {
   const location = useLocation()
-  const currentPage = navItems.find((item) => item.path === location.pathname)
+  const currentPage = allNavItems.find((item) => item.path === location.pathname)
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-gray-950/80 backdrop-blur-xl border-b border-white/5">

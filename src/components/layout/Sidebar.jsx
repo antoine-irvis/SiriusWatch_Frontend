@@ -1,9 +1,70 @@
-import { NavLink } from 'react-router-dom'
-import { X } from 'lucide-react'
-import navItems from '../../data/navItems'
+import { useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { X, ChevronRight } from 'lucide-react'
+import navSections from '../../data/navItems'
 import siriusLogo from '../../assets/sirius-logo.png'
 
+function NavItem({ item, onClose }) {
+  return (
+    <NavLink
+      to={item.path}
+      onClick={onClose}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+          isActive
+            ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+            : 'text-white/60 hover:text-white/80 hover:bg-white/5 border border-transparent'
+        }`
+      }
+    >
+      <item.icon size={18} className="shrink-0" />
+      <span>{item.label}</span>
+    </NavLink>
+  )
+}
+
+function CollapsibleSection({ section, onClose, defaultOpen }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
+  const location = useLocation()
+  const hasActiveChild = section.items.some((item) => item.path === location.pathname)
+
+  // Auto-expand when a child is active
+  const expanded = isOpen || hasActiveChild
+
+  return (
+    <div>
+      <button
+        onClick={() => setIsOpen(!expanded)}
+        className="flex items-center gap-2 w-full border-t border-white/5 mt-3 pt-3 mb-1 px-3 group/collapse"
+      >
+        <ChevronRight
+          size={12}
+          className={`text-white/20 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
+        />
+        <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-white/20 group-hover/collapse:text-white/30 transition-colors">
+          {section.label}
+        </span>
+        <span className="text-[0.55rem] text-white/10 ml-auto">
+          {section.items.length}
+        </span>
+      </button>
+      <div
+        className={`space-y-1 overflow-hidden transition-all duration-200 ${
+          expanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        {section.items.map((item) => (
+          <NavItem key={item.path} item={item} onClose={onClose} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Sidebar({ isOpen, onClose }) {
+  const mainSections = navSections.filter((s) => !s.pinBottom)
+  const bottomSections = navSections.filter((s) => s.pinBottom)
+
   return (
     <>
       {/* Mobile overlay */}
@@ -51,24 +112,47 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* Nav links */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
-                  isActive
-                    ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
-                    : 'text-white/60 hover:text-white/80 hover:bg-white/5 border border-transparent'
-                }`
+        <nav className="flex-1 px-3 py-4 overflow-y-auto flex flex-col">
+          <div className="space-y-1">
+            {mainSections.map((section, sectionIdx) => {
+              if (section.collapsible) {
+                return (
+                  <CollapsibleSection
+                    key={sectionIdx}
+                    section={section}
+                    onClose={onClose}
+                    defaultOpen={false}
+                  />
+                )
               }
-            >
-              <item.icon size={18} className="shrink-0" />
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
+
+              return (
+                <div key={sectionIdx} className="space-y-1">
+                  {section.label && (
+                    <div className="border-t border-white/5 mt-3 pt-3 mb-2 px-3">
+                      <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-white/20">
+                        {section.label}
+                      </span>
+                    </div>
+                  )}
+                  {section.items.map((item) => (
+                    <NavItem key={item.path} item={item} onClose={onClose} />
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Bottom-pinned sections */}
+          <div className="mt-auto pt-2 space-y-1">
+            {bottomSections.map((section, sectionIdx) => (
+              <div key={sectionIdx}>
+                {section.items.map((item) => (
+                  <NavItem key={item.path} item={item} onClose={onClose} />
+                ))}
+              </div>
+            ))}
+          </div>
         </nav>
 
         {/* Bottom status */}
