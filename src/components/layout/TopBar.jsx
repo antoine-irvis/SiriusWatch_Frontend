@@ -16,7 +16,7 @@ export default function TopBar({ onMenuClick }) {
           <Menu size={20} className="text-white/60" />
         </button>
         <div>
-          <h2 className="text-base font-semibold text-white/90">
+          <h2 className="text-xl font-semibold text-white/90">
             {currentPage?.label || 'Dashboard'}
           </h2>
           <p className="text-xs text-white/40">{currentPage?.description || ''}</p>

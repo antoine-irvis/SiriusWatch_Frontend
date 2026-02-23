@@ -1,4 +1,5 @@
 import {
+  LayoutDashboard,
   Package,
   MonitorCog,
   Focus,
@@ -9,6 +10,12 @@ import {
 } from 'lucide-react'
 
 const navItems = [
+  {
+    label: 'Home',
+    path: '/dashboard',
+    icon: LayoutDashboard,
+    description: 'Welcome & quick access',
+  },
   {
     label: 'Product Information',
     path: '/product',

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Card from '../components/ui/Card'
 import { Cog, Camera, ChevronDown, Plus, Trash2, ChevronRight } from 'lucide-react'
 
@@ -26,6 +26,13 @@ function AddDropdown({ groups, onAdd, placeholder, icon: Icon, onOpenChange }) {
     if (!val) setSearch('')
     onOpenChange?.(val)
   }
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleEsc = (e) => { if (e.key === 'Escape') toggle(false) }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [isOpen])
 
   const q = search.toLowerCase()
   const filtered = groups.map(g => ({

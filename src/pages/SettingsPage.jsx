@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Card from '../components/ui/Card'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import { useToast } from '../context/ToastContext'
+import { SAVE_FEEDBACK_MS } from '../utils/constants'
 import {
   User, ScanSearch, Focus, Gauge, Database, RotateCcw,
   Save, Upload, Download, Trash2, Check,
@@ -115,13 +118,16 @@ function Divider() {
 export default function SettingsPage() {
   const [settings, setSettings] = useState(load)
   const [saved, setSaved] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const { addToast } = useToast()
 
   const set = (key, val) => setSettings(prev => ({ ...prev, [key]: val }))
 
   const handleSave = () => {
     localStorage.setItem(LS_KEY, JSON.stringify(settings))
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => setSaved(false), SAVE_FEEDBACK_MS)
+    addToast('Settings saved', 'success')
   }
 
   const handleReset = () => {
@@ -137,6 +143,7 @@ export default function SettingsPage() {
     a.download = 'siriuswatch-settings.json'
     a.click()
     URL.revokeObjectURL(url)
+    addToast('Settings exported', 'success')
   }
 
   const handleImportSettings = () => {
@@ -151,7 +158,8 @@ export default function SettingsPage() {
         try {
           const data = JSON.parse(ev.target.result)
           setSettings({ ...DEFAULTS, ...data })
-        } catch { /* ignore bad files */ }
+          addToast('Settings imported', 'success')
+        } catch { addToast('Invalid settings file', 'error') }
       }
       reader.readAsText(file)
     }
@@ -162,6 +170,7 @@ export default function SettingsPage() {
     const keys = ['sw-camera-cal', 'sw-handeye-cal', 'sw-cal-history', LS_KEY]
     keys.forEach(k => localStorage.removeItem(k))
     setSettings({ ...DEFAULTS })
+    addToast('All data cleared', 'info')
   }
 
   return (
@@ -281,12 +290,22 @@ export default function SettingsPage() {
             <p className="text-xs text-white/60">Clear All Data</p>
             <p className="text-[0.65rem] text-white/25 mt-0.5">Remove all calibrations, history, and settings from this browser</p>
           </div>
-          <button onClick={handleClearAllData}
+          <button onClick={() => setShowClearConfirm(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-white/30 hover:text-rose-400 bg-white/[0.03] border border-white/8 hover:border-rose-500/20 hover:bg-rose-500/5 transition-all cursor-pointer">
             <Trash2 size={12} /> Clear All
           </button>
         </div>
       </Section>
+
+      <ConfirmDialog
+        open={showClearConfirm}
+        danger
+        title="Clear All Data?"
+        message="This will remove all calibrations, history, and settings from this browser. This action cannot be undone."
+        confirmLabel="Clear All"
+        onConfirm={() => { handleClearAllData(); setShowClearConfirm(false) }}
+        onCancel={() => setShowClearConfirm(false)}
+      />
     </div>
   )
 }

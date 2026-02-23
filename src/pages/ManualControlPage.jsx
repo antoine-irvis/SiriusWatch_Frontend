@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Card from '../components/ui/Card'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import {
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ChevronUp, ChevronDown,
   Hand, Home, Eye, Plus, Trash2, Play, Unlock, Gauge,
@@ -23,10 +24,14 @@ const JOINT_LABELS = ['J1', 'J2', 'J3', 'J4', 'J5', 'J6']
 const CART_LABELS = ['X', 'Y', 'Z', 'Rx', 'Ry', 'Rz']
 const CART_UNITS = ['mm', 'mm', 'mm', '°', '°', '°']
 
-function JogButton({ children, onPress, className = '' }) {
+function JogButton({ children, onPress, pressed, className = '' }) {
   return (
     <button onMouseDown={onPress}
-      className={`flex items-center justify-center gap-1 rounded-xl bg-white/[0.04] border border-white/8 text-white/50 hover:bg-white/10 hover:text-white hover:border-white/15 active:bg-blue-500/20 active:border-blue-500/30 active:text-blue-400 transition-all cursor-pointer select-none ${className}`}>
+      className={`flex items-center justify-center gap-1 rounded-xl border transition-all cursor-pointer select-none ${
+        pressed
+          ? 'bg-blue-500/20 border-blue-500/30 text-blue-400'
+          : 'bg-white/[0.04] border-white/8 text-white/50 hover:bg-white/10 hover:text-white hover:border-white/15 active:bg-blue-500/20 active:border-blue-500/30 active:text-blue-400'
+      } ${className}`}>
       {children}
     </button>
   )
@@ -64,6 +69,35 @@ export default function ManualControlPage() {
 
   const [joints, setJoints] = useState([45.2, -60.3, 82.1, -110.5, -45.0, 12.8])
   const [cartesian, setCartesian] = useState([520.3, 180.5, 280.0, 175.2, -5.3, 42.1])
+  const [showEstopConfirm, setShowEstopConfirm] = useState(false)
+  const [pressedKey, setPressedKey] = useState(null)
+
+  /* Arrow key jog support */
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (estop) return
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (jogMode === 'cartesian') {
+        switch (e.key) {
+          case 'ArrowLeft':  e.preventDefault(); setPressedKey('x-'); jog(0, -1); break
+          case 'ArrowRight': e.preventDefault(); setPressedKey('x+'); jog(0, 1); break
+          case 'ArrowUp':    e.preventDefault(); setPressedKey('y+'); jog(1, 1); break
+          case 'ArrowDown':  e.preventDefault(); setPressedKey('y-'); jog(1, -1); break
+        }
+      }
+    }
+    const handleKeyUp = (e) => {
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        setPressedKey(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  })
 
   const jog = (axis, dir) => {
     if (estop) return
@@ -95,7 +129,7 @@ export default function ManualControlPage() {
           <h2 className="text-2xl font-bold text-white/90">Manual Control</h2>
           <p className="text-sm text-white/40 mt-1">Jog the robot, control the gripper, and manage positions</p>
         </div>
-        <button onClick={() => setEstop(!estop)}
+        <button onClick={() => estop ? setEstop(false) : setShowEstopConfirm(true)}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
             estop
               ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30'
@@ -165,10 +199,10 @@ export default function ManualControlPage() {
                 <div className="flex flex-col gap-3">
                   <p className="text-[0.65rem] font-semibold text-center uppercase tracking-widest text-rose-400/60">X</p>
                   <div className="grid grid-cols-2 gap-2 flex-1">
-                    <JogButton onPress={() => jog(0, -1)} className="min-h-16">
+                    <JogButton onPress={() => jog(0, -1)} pressed={pressedKey === 'x-'} className="min-h-16">
                       <ArrowLeft size={18} /><span className="text-xs">X−</span>
                     </JogButton>
-                    <JogButton onPress={() => jog(0, 1)} className="min-h-16">
+                    <JogButton onPress={() => jog(0, 1)} pressed={pressedKey === 'x+'} className="min-h-16">
                       <span className="text-xs">X+</span><ArrowRight size={18} />
                     </JogButton>
                   </div>
@@ -177,10 +211,10 @@ export default function ManualControlPage() {
                 <div className="flex flex-col gap-3">
                   <p className="text-[0.65rem] font-semibold text-center uppercase tracking-widest text-emerald-400/60">Y</p>
                   <div className="flex flex-col gap-2 flex-1">
-                    <JogButton onPress={() => jog(1, 1)} className="flex-1 min-h-16 w-full">
+                    <JogButton onPress={() => jog(1, 1)} pressed={pressedKey === 'y+'} className="flex-1 min-h-16 w-full">
                       <ArrowUp size={18} /><span className="text-xs">Y+</span>
                     </JogButton>
-                    <JogButton onPress={() => jog(1, -1)} className="flex-1 min-h-16 w-full">
+                    <JogButton onPress={() => jog(1, -1)} pressed={pressedKey === 'y-'} className="flex-1 min-h-16 w-full">
                       <ArrowDown size={18} /><span className="text-xs">Y−</span>
                     </JogButton>
                   </div>
@@ -340,6 +374,16 @@ export default function ManualControlPage() {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showEstopConfirm}
+        danger
+        title="Activate Emergency Stop?"
+        message="This will immediately halt all robot motion."
+        confirmLabel="Activate E-Stop"
+        onConfirm={() => { setEstop(true); setShowEstopConfirm(false) }}
+        onCancel={() => setShowEstopConfirm(false)}
+      />
     </div>
   )
 }

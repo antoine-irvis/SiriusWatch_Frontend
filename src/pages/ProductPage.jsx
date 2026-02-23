@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Upload, Download, Plus, Trash2 } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
+import { useToast } from '../context/ToastContext'
 
 const defaultFields = [
   { id: 1, label: 'Serial Number', value: '' },
@@ -11,6 +12,7 @@ const defaultFields = [
 ]
 
 export default function ProductPage() {
+  const { addToast } = useToast()
   const [productName, setProductName] = useState('')
   const [description, setDescription] = useState('')
   const [fields, setFields] = useState(defaultFields)
@@ -38,6 +40,7 @@ export default function ProductPage() {
     a.download = `${productName || 'product'}-config.json`
     a.click()
     URL.revokeObjectURL(url)
+    addToast('Product config exported', 'success')
   }
 
   const handleImport = () => {
@@ -58,8 +61,9 @@ export default function ProductPage() {
             const maxId = Math.max(...data.fields.map((f) => f.id), 0)
             setNextId(maxId + 1)
           }
+          addToast('Product config imported', 'success')
         } catch {
-          alert('Invalid JSON file')
+          addToast('Invalid JSON file', 'error')
         }
       }
       reader.readAsText(file)

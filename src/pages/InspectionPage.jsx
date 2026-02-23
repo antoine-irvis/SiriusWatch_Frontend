@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Card from '../components/ui/Card'
+import { useToast } from '../context/ToastContext'
+import { STATUS_TEXT_COLORS, STATUS_BG_COLORS, TEST_DELAY_BASE_MS, TEST_DELAY_RANGE_MS } from '../utils/constants'
 import {
   Camera, Crosshair, Play, Pause, Square, Download, Check, X,
   AlertTriangle, ChevronDown, RotateCcw, ZoomIn, ZoomOut, Maximize2,
@@ -58,8 +60,6 @@ const CAMERAS = [
 ]
 
 /* ── helpers ── */
-const statusColor = { pass: 'text-emerald-400', fail: 'text-rose-400', warning: 'text-amber-400' }
-const statusBg = { pass: 'bg-emerald-500', fail: 'bg-rose-500', warning: 'bg-amber-500' }
 const statusIcon = (s) => {
   if (s === 'pass') return <Check size={10} className="text-emerald-400" />
   if (s === 'fail') return <X size={10} className="text-rose-400" />
@@ -109,6 +109,7 @@ const ThermalOverlay = () => (
 )
 
 export default function InspectionPage() {
+  const { addToast } = useToast()
   /* inspection type selection */
   const [selectedInspections, setSelectedInspections] = useState(() => new Set(INSPECTIONS.map(i => i.id)))
 
@@ -204,7 +205,7 @@ export default function InspectionPage() {
       setResults(prev => [...prev, { ...pt, ...result }])
       addLog(`${pt.label}: ${result.status.toUpperCase()} — ${result.value}`, result.status)
       runPoint(index + 1)
-    }, 1800 + Math.random() * 1200)
+    }, TEST_DELAY_BASE_MS + Math.random() * TEST_DELAY_RANGE_MS)
   }
 
   const handleStart = () => {
@@ -274,6 +275,7 @@ export default function InspectionPage() {
     a.download = `inspection-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
+    addToast('Inspection results exported', 'success')
   }
 
   const cameraTarget = currentPoint || (hovered ? POINTS.find(p => p.id === hovered) : null)
@@ -426,10 +428,10 @@ export default function InspectionPage() {
       </Card>
 
       {/* ══════════ MIDDLE: Camera Feed + Test Points ══════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 flex-1">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 flex-1">
 
         {/* ── Camera Feed ── */}
-        <Card className="lg:col-span-3 !p-0 overflow-hidden flex flex-col">
+        <Card className="md:col-span-2 lg:col-span-3 !p-0 overflow-hidden flex flex-col">
           {/* Header with source switcher */}
           <div className="flex items-center gap-2 px-5 pt-4 pb-3">
             <Camera size={16} className="text-blue-400" />
@@ -605,7 +607,7 @@ export default function InspectionPage() {
         </Card>
 
         {/* ── Test Points ── */}
-        <Card className="lg:col-span-2 !p-0 overflow-hidden flex flex-col">
+        <Card className="md:col-span-1 lg:col-span-2 !p-0 overflow-hidden flex flex-col">
           <div className="flex items-center gap-2 px-5 pt-4 pb-3">
             <Crosshair size={16} className="text-blue-400" />
             <h3 className="text-sm font-semibold text-white/80">Test Points</h3>
@@ -645,7 +647,7 @@ export default function InspectionPage() {
                       active
                         ? 'bg-blue-400 shadow-lg shadow-blue-400/50 scale-150'
                         : result
-                          ? `${statusBg[result.status]} shadow-lg ${result.status === 'pass' ? 'shadow-emerald-400/30' : result.status === 'fail' ? 'shadow-rose-400/30' : 'shadow-amber-400/30'}`
+                          ? `${STATUS_BG_COLORS[result.status]} shadow-lg ${result.status === 'pass' ? 'shadow-emerald-400/30' : result.status === 'fail' ? 'shadow-rose-400/30' : 'shadow-amber-400/30'}`
                           : dimmed
                             ? 'bg-white/10 border border-dashed border-white/10'
                             : on
@@ -659,7 +661,7 @@ export default function InspectionPage() {
                       <p className="text-[0.6rem] text-white/30 mt-0.5">{pt.test}</p>
                       {!inspEnabled && <p className="text-[0.6rem] text-white/15 mt-0.5 italic">Inspection type disabled</p>}
                       {result && (
-                        <p className={`text-[0.6rem] mt-0.5 font-semibold ${statusColor[result.status]}`}>
+                        <p className={`text-[0.6rem] mt-0.5 font-semibold ${STATUS_TEXT_COLORS[result.status]}`}>
                           {result.status.toUpperCase()} — {result.value}
                         </p>
                       )}
@@ -710,19 +712,19 @@ export default function InspectionPage() {
                     }`}>
                     <div className={`w-2 h-2 rounded-full shrink-0 ${
                       active ? 'bg-blue-400 animate-pulse'
-                        : result ? statusBg[result.status]
+                        : result ? STATUS_BG_COLORS[result.status]
                         : dimmed ? 'bg-white/10 border border-dashed border-white/15'
                         : on ? 'bg-white/40' : 'bg-white/10'
                     }`} />
                     <span className={`flex-1 text-left truncate ${
                       active ? 'text-blue-400'
-                        : result ? statusColor[result.status]
+                        : result ? STATUS_TEXT_COLORS[result.status]
                         : dimmed ? 'text-white/15 line-through'
                         : on ? 'text-white/60' : 'text-white/20'
                     }`}>{pt.label}</span>
                     <span className={`text-[0.6rem] truncate ${dimmed ? 'text-white/10' : 'text-white/15'}`}>{pt.test}</span>
                     {result && (
-                      <span className={`text-[0.6rem] font-mono ${statusColor[result.status]}`}>{result.value}</span>
+                      <span className={`text-[0.6rem] font-mono ${STATUS_TEXT_COLORS[result.status]}`}>{result.value}</span>
                     )}
                   </button>
                 )

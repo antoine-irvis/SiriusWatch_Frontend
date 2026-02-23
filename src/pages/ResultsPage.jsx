@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react'
 import Card from '../components/ui/Card'
+import EmptyState from '../components/ui/EmptyState'
+import { useToast } from '../context/ToastContext'
+import { STATUS_TEXT_COLORS, STATUS_BORDER_BG_COLORS } from '../utils/constants'
 import {
   BarChart3, TrendingUp, Clock, AlertTriangle,
   Check, X, ChevronDown, Search, Download, Filter,
@@ -182,24 +185,23 @@ const formatTime = (iso) => {
   return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 }
 
-const statusColor = {
-  pass: 'text-emerald-400',
-  fail: 'text-rose-400',
-  warning: 'text-amber-400',
-}
-const statusBg = {
-  pass: 'bg-emerald-500/10 border-emerald-500/20',
-  fail: 'bg-rose-500/10 border-rose-500/20',
-  warning: 'bg-amber-500/10 border-amber-500/20',
-}
-
 /* ── component ── */
 export default function ResultsPage() {
+  const { addToast } = useToast()
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState(null)
   const [sortKey, setSortKey] = useState('date')
   const [sortDir, setSortDir] = useState('desc')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [testTypeFilter, setTestTypeFilter] = useState('all')
+
+  const testTypes = useMemo(() => {
+    const types = new Set()
+    MOCK_RUNS.forEach(r => r.tests.forEach(t => types.add(t.name)))
+    return ['all', ...Array.from(types).sort()]
+  }, [])
 
   const runs = useMemo(() => {
     return MOCK_RUNS.map(r => ({ ...r, verdict: getVerdict(r.tests) }))
@@ -232,6 +234,11 @@ export default function ResultsPage() {
         r.operator.toLowerCase().includes(q)
       )
     }
+    if (dateFrom) list = list.filter(r => new Date(r.date) >= new Date(dateFrom))
+    if (dateTo) list = list.filter(r => new Date(r.date) <= new Date(dateTo + 'T23:59:59'))
+    if (testTypeFilter !== 'all') {
+      list = list.filter(r => r.tests.some(t => t.name === testTypeFilter))
+    }
     list = [...list].sort((a, b) => {
       let va, vb
       if (sortKey === 'date') { va = new Date(a.date); vb = new Date(b.date) }
@@ -245,7 +252,7 @@ export default function ResultsPage() {
       return 0
     })
     return list
-  }, [runs, filter, search, sortKey, sortDir])
+  }, [runs, filter, search, sortKey, sortDir, dateFrom, dateTo, testTypeFilter])
 
   const handleSort = (key) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -277,6 +284,7 @@ export default function ResultsPage() {
     a.download = `results-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
+    addToast('Results exported', 'success')
   }
 
   const maxFail = failureCounts.length > 0 ? failureCounts[0][1] : 1
@@ -338,6 +346,20 @@ export default function ResultsPage() {
                   className="w-full bg-white/5 border border-white/8 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white/70 placeholder:text-white/20 outline-none focus:border-white/20 transition-colors" />
               </div>
 
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                className="bg-white/5 border border-white/8 rounded-lg px-2 py-1.5 text-xs text-white/70 outline-none focus:border-white/20 transition-colors" />
+              <span className="text-xs text-white/15">to</span>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                className="bg-white/5 border border-white/8 rounded-lg px-2 py-1.5 text-xs text-white/70 outline-none focus:border-white/20 transition-colors" />
+
+              <select value={testTypeFilter} onChange={e => setTestTypeFilter(e.target.value)}
+                className="bg-white/5 border border-white/8 rounded-lg px-2 py-1.5 text-xs text-white/70 outline-none focus:border-white/20 transition-colors cursor-pointer">
+                <option value="all" className="bg-gray-900">All Tests</option>
+                {testTypes.filter(t => t !== 'all').map(t => (
+                  <option key={t} value={t} className="bg-gray-900">{t}</option>
+                ))}
+              </select>
+
               <button onClick={handleExport}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white/30 hover:text-white/60 hover:bg-white/5 transition-all cursor-pointer border border-white/8">
                 <Download size={12} /> Export
@@ -383,7 +405,7 @@ export default function ResultsPage() {
                       <span className="text-xs text-white/50">{run.product}</span>
                       <span className="text-xs text-white/40">{run.operator}</span>
                       <span className="text-xs font-mono text-white/40">{run.duration}</span>
-                      <span className={`text-xs font-semibold ${statusColor[run.verdict]}`}>
+                      <span className={`text-xs font-semibold ${STATUS_TEXT_COLORS[run.verdict]}`}>
                         {run.verdict === 'pass' ? 'PASS' : run.verdict === 'fail' ? 'FAIL' : 'WARN'}
                       </span>
                       <ChevronDown size={12} className={`text-white/20 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -393,11 +415,11 @@ export default function ResultsPage() {
                     {isOpen && (
                       <div className="px-5 pb-4 pt-1">
                         {/* Verdict bar */}
-                        <div className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 mb-4 ${statusBg[run.verdict]}`}>
+                        <div className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 mb-4 ${STATUS_BORDER_BG_COLORS[run.verdict]}`}>
                           {run.verdict === 'pass' ? <CheckCircle2 size={16} className="text-emerald-400" />
                             : run.verdict === 'fail' ? <XCircle size={16} className="text-rose-400" />
                             : <AlertTriangle size={16} className="text-amber-400" />}
-                          <span className={`text-xs font-semibold ${statusColor[run.verdict]}`}>
+                          <span className={`text-xs font-semibold ${STATUS_TEXT_COLORS[run.verdict]}`}>
                             {run.verdict === 'pass' ? 'PASSED' : run.verdict === 'fail' ? 'FAILED' : 'WARNING'}
                           </span>
                           <span className="text-xs text-white/30 ml-auto">
@@ -417,7 +439,7 @@ export default function ResultsPage() {
                                 {t.status === 'pass' ? <Check size={10} className="text-emerald-400" />
                                   : t.status === 'fail' ? <X size={10} className="text-rose-400" />
                                   : <AlertTriangle size={10} className="text-amber-400" />}
-                                <span className={statusColor[t.status]}>{t.status.toUpperCase()}</span>
+                                <span className={STATUS_TEXT_COLORS[t.status]}>{t.status.toUpperCase()}</span>
                               </span>
                               <span className={`font-mono ${t.status === 'fail' ? 'text-rose-400/70' : 'text-white/40'}`}>{t.value}</span>
                               <span className="font-mono text-white/20">{t.threshold}</span>
@@ -432,9 +454,7 @@ export default function ResultsPage() {
               })}
 
               {filtered.length === 0 && (
-                <div className="px-5 py-12 text-center text-xs text-white/20">
-                  No results match your filters.
-                </div>
+                <EmptyState icon={Search} title="No results found" description="No results match your current filters" />
               )}
             </div>
           </Card>

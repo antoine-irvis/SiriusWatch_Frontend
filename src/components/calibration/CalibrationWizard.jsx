@@ -226,6 +226,13 @@ export default function CalibrationWizard({ type, onComplete, onCancel }) {
   // Auto-scroll log
   useEffect(() => { logRef.current?.scrollTo(0, logRef.current.scrollHeight) }, [events, showLog])
 
+  // Escape key to close wizard
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onCancel() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onCancel])
+
   // Step 0: auto-connect
   useEffect(() => {
     if (step !== 0) return

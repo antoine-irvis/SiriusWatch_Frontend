@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import EmptyState from '../components/ui/EmptyState'
 import CalibrationWizard from '../components/calibration/CalibrationWizard'
+import { useToast } from '../context/ToastContext'
+import { STALE_CALIBRATION_DAYS } from '../utils/constants'
 import { Camera, Crosshair, Play, Upload, Download, ChevronDown, Lock, AlertTriangle, CheckCircle, Circle, Clock, Trash2 } from 'lucide-react'
-
-const STALE_DAYS = 30
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -19,7 +21,7 @@ function timeAgo(dateStr) {
 
 function isStale(calData) {
   if (!calData) return false
-  return (Date.now() - new Date(calData.completedAt).getTime()) / 86400000 > STALE_DAYS
+  return (Date.now() - new Date(calData.completedAt).getTime()) / 86400000 > STALE_CALIBRATION_DAYS
 }
 
 function Tip({ children, text }) {
@@ -100,7 +102,9 @@ function HandEyeResultsSummary({ data }) {
 
 function HistoryPanel({ history, onClear }) {
   const [open, setOpen] = useState(false)
-  if (history.length === 0) return null
+  if (history.length === 0) return (
+    <EmptyState icon={Clock} title="No calibration history" description="Past calibration runs will appear here" />
+  )
   return (
     <div className="mt-4">
       <button onClick={() => setOpen(!open)}
@@ -192,7 +196,7 @@ function CalibrationCard({ type, icon: Icon, iconColor, title, description, calD
       {stale && (
         <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-3">
           <AlertTriangle size={14} className="text-amber-400 shrink-0" />
-          <p className="text-[0.65rem] text-amber-400/80">Calibration is over {STALE_DAYS} days old — consider recalibrating</p>
+          <p className="text-[0.65rem] text-amber-400/80">Calibration is over {STALE_CALIBRATION_DAYS} days old — consider recalibrating</p>
         </div>
       )}
 
@@ -246,6 +250,8 @@ function EventLogPreview({ events }) {
 /* ── Main Page ── */
 
 export default function CalibrationPage() {
+  const { addToast } = useToast()
+  const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false)
   const [cameraCalData, setCameraCalData] = useState(() => {
     try { return JSON.parse(localStorage.getItem('sw-camera-cal')) } catch { return null }
   })
@@ -288,6 +294,7 @@ export default function CalibrationPage() {
     a.download = 'calibration-data.json'
     a.click()
     URL.revokeObjectURL(url)
+    addToast('Calibration data exported', 'success')
   }
 
   const handleImport = () => {
@@ -313,7 +320,8 @@ export default function CalibrationPage() {
             setHistory(data.history)
             localStorage.setItem('sw-cal-history', JSON.stringify(data.history))
           }
-        } catch { alert('Invalid calibration file') }
+          addToast('Calibration data imported', 'success')
+        } catch { addToast('Invalid calibration file', 'error') }
       }
       reader.readAsText(file)
     }
@@ -323,6 +331,7 @@ export default function CalibrationPage() {
   const clearHistory = () => {
     setHistory([])
     localStorage.removeItem('sw-cal-history')
+    addToast('Calibration history cleared', 'info')
   }
 
   return (
@@ -368,7 +377,7 @@ export default function CalibrationPage() {
       </div>
 
       {/* History */}
-      <HistoryPanel history={history} onClear={clearHistory} />
+      <HistoryPanel history={history} onClear={() => setShowClearHistoryConfirm(true)} />
 
       {/* Wizard Modal */}
       {wizardType && (
@@ -378,6 +387,16 @@ export default function CalibrationPage() {
           onCancel={() => setWizardType(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={showClearHistoryConfirm}
+        danger
+        title="Clear Calibration History?"
+        message="All past calibration records will be removed."
+        confirmLabel="Clear History"
+        onConfirm={() => { clearHistory(); setShowClearHistoryConfirm(false) }}
+        onCancel={() => setShowClearHistoryConfirm(false)}
+      />
     </div>
   )
 }

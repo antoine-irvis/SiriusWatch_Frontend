@@ -38,10 +38,10 @@ export default function Sidebar({ isOpen, onClose }) {
             <div className="relative -mb-1">
               <img src={siriusLogo} alt="Sirius Watch" className="w-[4.5rem] h-[4.5rem] object-contain drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
             </div>
-            <h1 className="text-xl font-bold tracking-widest text-white uppercase">
+            <h1 className="text-2xl font-bold tracking-widest text-white uppercase">
               Sirius
             </h1>
-            <span className="text-[0.65rem] font-medium tracking-[0.35em] text-blue-400/80 uppercase mt-0.5">
+            <span className="text-xs font-medium tracking-[0.35em] text-blue-400/80 uppercase mt-0.5">
               Watch
             </span>
             <span className="text-[0.55rem] text-white/30 tracking-wider mt-1.5">
@@ -74,7 +74,7 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* Bottom status */}
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
+            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50 animate-pulse" />
             <span className="text-xs text-white/40">Robot Connected</span>
           </div>
         </div>
