@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/SiriusWatch_Frontend/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sirius Watch — Quality Control Dashboard</title>
+    <!-- SPA redirect handler for GitHub Pages -->
+    <script>
+      (function(l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&');
+          }).join('?');
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location));
+    </script>
+    <script type="module" crossorigin src="/SiriusWatch_Frontend/assets/index-B7r0nFIZ.js"></script>
+    <link rel="stylesheet" crossorigin href="/SiriusWatch_Frontend/assets/index-p67bIEzB.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

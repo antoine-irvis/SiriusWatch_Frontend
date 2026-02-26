@@ -1,0 +1,151 @@
+<?xml version="1.0" ?>
+<robot name="ur3" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Base Link -->
+  <link name="base_link">
+    <collision>
+      <geometry>
+        <mesh filename="collision/base.stl"/>
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <mesh filename="collision/base.stl"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- Shoulder Link -->
+  <link name="shoulder_link">
+    <collision>
+      <geometry>
+        <mesh filename="collision/shoulder.stl"/>
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <mesh filename="collision/shoulder.stl"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- Upper Arm Link -->
+  <link name="upper_arm_link">
+    <collision>
+      <geometry>
+        <mesh filename="collision/upperarm.stl"/>
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <mesh filename="collision/upperarm.stl"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- Forearm Link -->
+  <link name="forearm_link">
+    <collision>
+      <geometry>
+        <mesh filename="collision/forearm.stl"/>
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <mesh filename="collision/forearm.stl"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- Wrist 1 Link -->
+  <link name="wrist_1_link">
+    <collision>
+      <geometry>
+        <mesh filename="collision/wrist1.stl"/>
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <mesh filename="collision/wrist1.stl"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- Wrist 2 Link -->
+  <link name="wrist_2_link">
+    <collision>
+      <geometry>
+        <mesh filename="collision/wrist2.stl"/>
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <mesh filename="collision/wrist2.stl"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- Wrist 3 Link -->
+  <link name="wrist_3_link">
+    <collision>
+      <geometry>
+        <mesh filename="collision/wrist3.stl"/>
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <mesh filename="collision/wrist3.stl"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- Joints -->
+  <joint name="shoulder_pan_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="shoulder_link"/>
+    <origin xyz="0 0 0.1519" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-6.2832" upper="6.2832" effort="56.0" velocity="3.1416"/>
+  </joint>
+
+  <joint name="shoulder_lift_joint" type="revolute">
+    <parent link="shoulder_link"/>
+    <child link="upper_arm_link"/>
+    <origin xyz="0 0.1198 0" rpy="0 1.5708 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-6.2832" upper="6.2832" effort="56.0" velocity="3.1416"/>
+  </joint>
+
+  <joint name="elbow_joint" type="revolute">
+    <parent link="upper_arm_link"/>
+    <child link="forearm_link"/>
+    <origin xyz="0 -0.0925 0.24365" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1416" upper="3.1416" effort="28.0" velocity="3.1416"/>
+  </joint>
+
+  <joint name="wrist_1_joint" type="revolute">
+    <parent link="forearm_link"/>
+    <child link="wrist_1_link"/>
+    <origin xyz="0 0 0.21325" rpy="0 1.5708 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-6.2832" upper="6.2832" effort="12.0" velocity="6.2832"/>
+  </joint>
+
+  <joint name="wrist_2_joint" type="revolute">
+    <parent link="wrist_1_link"/>
+    <child link="wrist_2_link"/>
+    <origin xyz="0 0.08505 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-6.2832" upper="6.2832" effort="12.0" velocity="6.2832"/>
+  </joint>
+
+  <joint name="wrist_3_joint" type="revolute">
+    <parent link="wrist_2_link"/>
+    <child link="wrist_3_link"/>
+    <origin xyz="0 0 0.08535" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-6.2832" upper="6.2832" effort="12.0" velocity="6.2832"/>
+  </joint>
+
+</robot>
